@@ -226,6 +226,9 @@ window.renderPortal = function(ent) {
 
   // do nothing if portal did not change
   var layerGroup = portalsLayers[parseInt(portalLevel)];
+  var enlightenedLayerGroup = enlightenedLayer;
+  var resistanceLayerGroup = resistanceLayer;
+  
   var old = findEntityInLeaflet(layerGroup, window.portals, ent[0]);
   if(old) {
     var oo = old.options;
@@ -304,6 +307,11 @@ window.renderPortal = function(ent) {
 
   window.runHooks('portalAdded', {portal: p});
   p.addTo(layerGroup);
+  if (team === TEAM_ENL) {
+    p.addTo(enlightenedLayerGroup);
+  } else {
+    p.addTo(resistanceLayerGroup);
+  }
 }
 
 window.renderResonators = function(ent, portalLayer) {
@@ -522,24 +530,4 @@ window.renderField = function(ent) {
     this.bringToBack();
   });
   poly.addTo(fieldsLayer);
-}
-
-
-// looks for the GUID in either the layerGroup or entityHash, depending
-// on which is faster. Will either return the Leaflet entity or null, if
-// it does not exist.
-// For example, to find a field use the function like this:
-// field = findEntityInLeaflet(fieldsLayer, fields, 'asdasdasd');
-window.findEntityInLeaflet = function(layerGroup, entityHash, guid) {
-  // fast way
-  if(map.hasLayer(layerGroup)) return entityHash[guid] || null;
-
-  // slow way in case the layer is currently hidden
-  var ent = null;
-  layerGroup.eachLayer(function(entity) {
-    if(entity.options.guid !== guid) return true;
-    ent = entity;
-    return false;
-  });
-  return ent;
 }

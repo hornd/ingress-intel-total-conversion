@@ -40,6 +40,29 @@ window.setupStyles = function() {
     + '</style>');
 }
 
+// looks for the GUID in either the layerGroup or entityHash, depending
+// on which is faster. Will either return the Leaflet entity or null, if
+// it does not exist.
+// For example, to find a field use the function like this:
+// field = findEntityInLeaflet(fieldsLayer, fields, 'asdasdasd');
+window.findEntityInLeaflet = function(layerGroup, entityHash, guid) {
+  // fast way
+  if(map.hasLayer(layerGroup)) return entityHash[guid] || null;
+
+  // slow way in case the layer is currently hidden
+  var ent = null;
+  layerGroup.eachLayer(function(entity) {
+    if(entity.options.guid !== guid) return true;
+    ent = entity;
+    return false;
+  });
+  return ent;
+}
+
+portalsLayers = [];
+
+
+
 window.setupMap = function() {
   $('#map').text('');
 
@@ -63,8 +86,15 @@ window.setupMap = function() {
   } catch(e) { map.addLayer(views[0]); }
 
   var addLayers = {};
+  
+  enlightenedLayer = new window.teamLayer([]);
+  map.addLayer(enlightenedLayer, true);
+  addLayers['Enlightened'] = enlightenedLayer; 
+  
+  resistanceLayer = new window.teamLayer([]);
+  map.addLayer(resistanceLayer, true);
+  addLayers['Resistance'] = resistanceLayer; 
 
-  portalsLayers = [];
   for(var i = 0; i <= 8; i++) {
     portalsLayers[i] = L.layerGroup([]);
     map.addLayer(portalsLayers[i]);
@@ -241,6 +271,42 @@ window.setupTooltips = function(element) {
   }
 }
 
+//When team is unchecked, need to remove all current nodes from the correct
+//level layer (done), and block all future additions. 
+// When team is checked again, function should load all the missed resonators back into their
+// appropriate level.
+window.extendLayer = function() {
+    window.teamLayer = L.LayerGroup.extend({
+      removeNodesFromLevelLayers: function(map) {
+        for(var j in portalsLayers) {
+          var testLayer = portalsLayers[j];
+          this.eachLayer(function(teamEntity) {
+            testLayer.eachLayer(function(levelEntity) {
+              if (teamEntity.options.guid === levelEntity.options.guid) {
+                  map.removeLayer(levelEntity);
+              }
+            });
+          });
+        }
+      },
+      
+      addNodesToLevelLayers: function() {
+          this.eachLayer(function(teamEntity) {
+            var lvl = getPortalLevel(teamEntity);
+            teamEntity.addTo(portalsLayers[lvl]);
+          });
+      },
+    
+      onAdd: function(map) {
+          this.addNodesToLevelLayers();
+      },
+      
+      onRemove: function(map) {
+          this.removeNodesFromLevelLayers(map);
+      }
+      
+    });
+}
 
 // BOOTING ///////////////////////////////////////////////////////////
 
@@ -256,7 +322,7 @@ function boot() {
 
   window.iconEnl = L.Icon.Default.extend({options: { iconUrl: base + 'marker-green.png' } });
   window.iconRes = L.Icon.Default.extend({options: { iconUrl: base + 'marker-blue.png' } });
-
+  window.extendLayer();
   window.setupStyles();
   window.setupMap();
   window.setupGeosearch();
