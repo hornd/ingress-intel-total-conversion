@@ -1,7 +1,7 @@
 // ==UserScript==
 // @id             iitc-plugin-player-tracker@breunigs
 // @name           iitc: player tracker
-// @version        0.1
+// @version        0.3
 // @namespace      https://github.com/breunigs/ingress-intel-total-conversion
 // @updateURL      https://raw.github.com/breunigs/ingress-intel-total-conversion/gh-pages/plugins/player-tracker.user.js
 // @downloadURL    https://raw.github.com/breunigs/ingress-intel-total-conversion/gh-pages/plugins/player-tracker.user.js
@@ -79,7 +79,7 @@ window.plugin.playerTracker.processNewData = function(data) {
         // Destroy link messages depend on how the link was originally
         // created. Therefore it’s not clear which portal the player is
         // at, so ignore it.
-        if(markup[1].plain.indexOf('destroyed') !== -1) {
+        if(markup[1].plain.indexOf('destroyed the Link') !== -1) {
           skipThisMessage = true;
           return false;
         }
@@ -208,11 +208,12 @@ window.plugin.playerTracker.drawData = function() {
         + ago(last.time, now) + ' minutes ago\n'
         + last.name;
     // show previous data in tooltip
+    var minsAgo = '\t<span style="white-space: nowrap;">mins ago</span>\t';
     if(evtsLength >= 2)
       title += '\n&nbsp;\nprevious locations:\n';
     for(var i = evtsLength - 2; i >= 0 && i >= evtsLength - 10; i--) {
       var ev = playerData.events[i];
-      title += ago(ev.time, now) + '\tmins ago\t' + ev.name + '\n';
+      title += ago(ev.time, now) + minsAgo + ev.name + '\n';
     }
 
     // marker itself
